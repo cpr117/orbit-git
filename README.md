@@ -2,13 +2,13 @@
 
 为 VS Code、Cursor 和 Qoder 提供接近 GoLand 的 Git 工作流：**分支 → 提交 → 文件 → Diff**。
 
-[VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=PRCooper.orbit-git) · [安装包与源码下载](https://github.com/qimaotech/orbit-git/releases/tag/v0.15.0) · [问题反馈](https://github.com/cpr117/orbit-git/issues) · [MIT License](LICENSE)
+[VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=PRCooper.orbit-git) · [安装包与源码下载](https://github.com/qimaotech/orbit-git/releases/tag/v0.15.1) · [问题反馈](https://github.com/cpr117/orbit-git/issues) · [MIT License](LICENSE)
 
 ## 安装与打开
 
 需要桌面版 VS Code 1.95+ 或兼容编辑器、本地 Git 2.28+，以及受信任的 Git 工作区。
 
-当前版本为 **Orbit Git 0.15.0 稳定版**，扩展 ID 为 `PRCooper.orbit-git`。
+当前版本为 **Orbit Git 0.15.1 稳定版**，扩展 ID 为 `PRCooper.orbit-git`。
 
 **VS Code 推荐从 Marketplace 安装**：在扩展面板搜索 `PRCooper.orbit-git`，确认发布者为 `PRCooper`；也可直接运行：
 
@@ -20,11 +20,11 @@ code --install-extension PRCooper.orbit-git
 
 **Cursor、Qoder 或离线安装**：
 
-1. 下载组织仓库的 [orbit-git-0.15.0.vsix](https://github.com/qimaotech/orbit-git/releases/download/v0.15.0/orbit-git-0.15.0.vsix)。[源码与 SHA256 校验文件](https://github.com/qimaotech/orbit-git/releases/tag/v0.15.0)位于同一发行版本。
+1. 下载组织仓库的 [orbit-git-0.15.1.vsix](https://github.com/qimaotech/orbit-git/releases/download/v0.15.1/orbit-git-0.15.1.vsix)。[源码与 SHA256 校验文件](https://github.com/qimaotech/orbit-git/releases/tag/v0.15.1)位于同一发行版本。
 2. 在扩展面板的 `…` 中选择 **从 VSIX 安装**。安装后确认显示名为 **Orbit Git**、发布者为 `PRCooper`，再重新加载编辑器。
 3. 打开 Git 项目，点击状态栏 **Orbit Git**，或运行命令 **Orbit Git: 打开功能菜单**。
 
-VSIX 命令行安装示例：`code --install-extension ./orbit-git-0.15.0.vsix`；Cursor 使用 `cursor --install-extension ./orbit-git-0.15.0.vsix`。请替换为实际包名，并在下载目录中执行。
+VSIX 命令行安装示例：`code --install-extension ./orbit-git-0.15.1.vsix`；Cursor 使用 `cursor --install-extension ./orbit-git-0.15.1.vsix`。请替换为实际包名，并在下载目录中执行。
 
 打开提交图的快捷键：macOS `Cmd+Alt+G`，Windows / Linux `Ctrl+Alt+G`。
 
@@ -50,7 +50,7 @@ macOS 12+ 本地工作区默认使用原生小窗；Windows、Linux 和远程工
 
 | 功能 | 使用方法 |
 | --- | --- |
-| 提交树 | 打开底部 **Git** 面板，与终端并列；左侧选分支，中间选提交，右侧选文件查看原生 Diff |
+| 提交树 | 打开底部 **Git** 面板，与终端并列；左侧选分支，中间选提交，右侧选文件查看原生 Diff；当前文件保持高亮 |
 | 筛选历史 | 按分支、提交信息、作者、日期或路径筛选；作者可从仓库提交人下拉选择，也可手输 Git 正则；列表底部可继续加载 |
 | 多提交比较 | `Shift` 连续多选，`Cmd / Ctrl` 点击增减；选中文件查看累计改动 |
 | 整个项目比较 | 右键 Git 面板左侧分支 → **与当前分支比较** 或 **与工作区比较（整个仓库）** |

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.15.1
 
 - Keep the clicked changed file highlighted when opening Diff; preserve it when refreshing the same comparison.
 - Add a repository-wide author dropdown and keep author expressions working alongside literal commit-message searches.
