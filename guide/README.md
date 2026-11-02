@@ -1,6 +1,6 @@
 # Orbit Git 使用指南网站
 
-插件功能介绍、交互演示和安装指南，与插件一起按根目录的 [MIT License](../LICENSE) 开源。本指南以 **Orbit Git 0.15.0 稳定版**（`PRCooper.orbit-git`）为准。安装包、源码和校验文件均从 [组织仓库 v0.15.0](https://github.com/qimaotech/orbit-git/releases/tag/v0.15.0) 获取；下载链接固定到对应 tag，确保指南与下载版本一致。
+插件功能介绍、交互演示和安装指南，与插件一起按根目录的 [MIT License](../LICENSE) 开源。本指南以 **Orbit Git 0.15.0 稳定版**（`PRCooper.orbit-git`）为准。VS Code 优先从 [Marketplace](https://marketplace.visualstudio.com/items?itemName=PRCooper.orbit-git) 安装，或运行 `code --install-extension PRCooper.orbit-git` 获取商城最新稳定版。Cursor、Qoder 和离线场景使用 [组织仓库 v0.15.0](https://github.com/qimaotech/orbit-git/releases/tag/v0.15.0) 的 VSIX；源码与校验文件也在同一发行版本，附件链接固定到对应 tag。
 
 ## 开发与预览
 

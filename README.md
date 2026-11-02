@@ -8,13 +8,23 @@
 
 需要桌面版 VS Code 1.95+ 或兼容编辑器、本地 Git 2.28+，以及受信任的 Git 工作区。
 
-当前版本为 **Orbit Git 0.15.0 稳定版**，扩展 ID 为 `PRCooper.orbit-git`。VS Code 可从 Marketplace 安装；Cursor、Qoder 或离线安装使用以下 VSIX 步骤。
+当前版本为 **Orbit Git 0.15.0 稳定版**，扩展 ID 为 `PRCooper.orbit-git`。
+
+**VS Code 推荐从 Marketplace 安装**：在扩展面板搜索 `PRCooper.orbit-git`，确认发布者为 `PRCooper`；也可直接运行：
+
+```sh
+code --install-extension PRCooper.orbit-git
+```
+
+该命令安装商城中的最新稳定版，无需先下载 VSIX。macOS 如提示找不到 `code`，先在 VS Code 命令面板运行 **Shell Command: Install 'code' command in PATH**。商城安装支持编辑器自动更新。
+
+**Cursor、Qoder 或离线安装**：
 
 1. 下载组织仓库的 [orbit-git-0.15.0.vsix](https://github.com/qimaotech/orbit-git/releases/download/v0.15.0/orbit-git-0.15.0.vsix)。[源码与 SHA256 校验文件](https://github.com/qimaotech/orbit-git/releases/tag/v0.15.0)位于同一发行版本。
 2. 在扩展面板的 `…` 中选择 **从 VSIX 安装**。安装后确认显示名为 **Orbit Git**、发布者为 `PRCooper`，再重新加载编辑器。
 3. 打开 Git 项目，点击状态栏 **Orbit Git**，或运行命令 **Orbit Git: 打开功能菜单**。
 
-命令行安装示例：`code --install-extension ./orbit-git-0.15.0.vsix`。请替换为实际文件名。
+VSIX 命令行安装示例：`code --install-extension ./orbit-git-0.15.0.vsix`；Cursor 使用 `cursor --install-extension ./orbit-git-0.15.0.vsix`。请替换为实际包名，并在下载目录中执行。
 
 打开提交图的快捷键：macOS `Cmd+Alt+G`，Windows / Linux `Ctrl+Alt+G`。
 
@@ -41,7 +51,7 @@ macOS 12+ 本地工作区默认使用原生小窗；Windows、Linux 和远程工
 | 功能 | 使用方法 |
 | --- | --- |
 | 提交树 | 打开底部 **Git** 面板，与终端并列；左侧选分支，中间选提交，右侧选文件查看原生 Diff |
-| 筛选历史 | 按分支、提交信息、作者、日期或路径筛选；列表底部可继续加载 |
+| 筛选历史 | 按分支、提交信息、作者、日期或路径筛选；作者可从仓库提交人下拉选择，也可手输 Git 正则；列表底部可继续加载 |
 | 多提交比较 | `Shift` 连续多选，`Cmd / Ctrl` 点击增减；选中文件查看累计改动 |
 | 整个项目比较 | 右键 Git 面板左侧分支 → **与当前分支比较** 或 **与工作区比较（整个仓库）** |
 | 文件 / 目录比较 | 资源管理器右键文件 / 文件夹 / 项目 → **Orbit Git** → **显示差异 / 与指定版本比较 / 与分支比较** |

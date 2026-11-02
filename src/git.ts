@@ -170,7 +170,10 @@ export class Git {
   async commits(filters: Filters = {}): Promise<Commit[]> {
     if (!await this.head()) return [];
     const args = ['log', '--topo-order', '-z', `--format=${format}`, `--max-count=${Math.max(1, Math.min(5000, filters.limit || 200))}`];
-    if (filters.search) args.push('--fixed-strings', `--grep=${filters.search}`);
+    // Git's pattern mode also applies to --author. Escape literal messages
+    // instead of making the author expression literal with --fixed-strings.
+    args.push('--basic-regexp');
+    if (filters.search) args.push(`--grep=${filters.search.replace(/[\\.^$[*]/g, '\\$&')}`);
     if (filters.author) args.push(`--author=${filters.author}`);
     if (filters.since) args.push(`--since=${filters.since}`);
     if (filters.until) args.push(`--until=${filters.until}`);
@@ -181,6 +184,13 @@ export class Git {
     args.push('--');
     if (filters.path) { this.file(filters.path); args.push(filters.path); }
     return parseCommits(await this.run(args));
+  }
+
+  async authors(): Promise<string[]> {
+    const revisions = ['--branches', '--remotes', '--tags'];
+    if (await this.head()) revisions.push('HEAD');
+    const raw = await this.run(['log', '-z', '--format=%an', ...revisions, '--']);
+    return [...new Set(raw.split('\0').filter(Boolean))].sort((a, b) => a.localeCompare(b));
   }
 
   async commit(hash: string): Promise<Commit> {

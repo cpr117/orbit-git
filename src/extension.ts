@@ -207,11 +207,11 @@ class Workbench implements vscode.Disposable, vscode.WebviewViewProvider {
       if (generation !== this.generation) return;
       if (this.filters.ref && this.filters.ref !== 'HEAD' && !refs.some(ref => ref.full === this.filters.ref)) this.filters = { ...this.filters, ref: undefined };
       const filters = { ...this.filters };
-      const [state, commits, stashes] = await Promise.all([git.state(), enabled.graph ? git.commits(filters) : [], enabled.stash ? stashSnapshot(git) : undefined]);
+      const [state, commits, stashes, authors] = await Promise.all([git.state(), enabled.graph ? git.commits(filters) : [], enabled.stash ? stashSnapshot(git) : undefined, enabled.graph ? git.authors() : []]);
       if (generation !== this.generation) return;
       this.refs = refs; this.visibleCommits = commits; this.branchHead = state.head; this.branchName = state.branch;
       this.stashes = stashes; this.stashToken = randomUUID(); this.stashFiles = undefined; this.stashGeneration++;
-      this.send('snapshot', { root: git.root, state, refs, commits, graph: graphRows(commits), filters, stashes: stashes?.entries || [], stashToken: this.stashToken });
+      this.send('snapshot', { root: git.root, state, refs, commits, graph: graphRows(commits), filters, authors, stashes: stashes?.entries || [], stashToken: this.stashToken });
     } finally {
       this.refreshing--;
       if (generation === this.generation) this.send('loading', false);

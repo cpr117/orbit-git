@@ -26,6 +26,7 @@ async function commit(git: Git, message: string): Promise<string> {
 test('empty repository, first commit, root diff and NUL-safe paths', async () => repository(async (git, root) => {
   assert.equal(await git.head(), undefined);
   assert.deepEqual(await git.commits(), []);
+  assert.deepEqual(await git.authors(), []);
   assert.equal((await git.state()).branch, 'main');
   const file = '空 格\t换\n行.txt';
   await writeFile(path.join(root, file), 'first\n');
@@ -161,6 +162,45 @@ test('filters, detached HEAD, worktree roots and branch validation', async () =>
   assert.equal((await Git.discover(path.join(root, 'src'))).root, await import('node:fs/promises').then(fs => fs.realpath(root)));
   await git.mutate(['switch', '--detach', first]);
   assert.equal((await git.state()).branch, '(detached HEAD)');
+}));
+
+test('author patterns and literal commit messages filter together, including regex characters in names', async () => repository(async (git, root) => {
+  await git.run(['config', 'user.name', 'A.[bot]*']);
+  await writeFile(path.join(root, 'a.txt'), 'one\n'); const exact = await commit(git, 'fix [case].* \\ path');
+  await git.run(['config', 'user.name', 'Another Author']);
+  await writeFile(path.join(root, 'a.txt'), 'two\n'); await commit(git, 'fix [case].* \\ path');
+  await git.run(['config', 'user.name', 'A.[bot]* Extra']);
+  await writeFile(path.join(root, 'a.txt'), 'three\n'); await commit(git, 'fix [case].* \\ path');
+  const author = '^A\\.\\[bot]\\* <';
+  assert.deepEqual((await git.commits({ author, search: 'fix [case].* \\ path' })).map(item => item.hash), [exact]);
+  assert.equal((await git.commits({ author: '^Another', search: '[case]' })).length, 1);
+  assert.equal((await git.commits({ search: 'fix c' })).length, 0, 'message search remains literal');
+}));
+
+test('repository author list covers older pages, other refs and detached HEAD, then refreshes after changes', async () => repository(async (git, root) => {
+  const stream = Array.from({ length: 205 }, (_, index) => {
+    const message = `commit-${index}`;
+    const name = index ? 'Recent Author' : 'Older Author';
+    return `commit refs/heads/main\nauthor ${name} <author@example.invalid> 1700000000 +0000\ncommitter Test <test@example.invalid> 1700000000 +0000\ndata ${Buffer.byteLength(message)}\n${message}\n`;
+  }).join('\n');
+  await git.mutate(['fast-import', '--quiet'], stream + '\n');
+  assert.equal((await git.commits()).length, 200);
+  assert.ok((await git.commits()).every(item => item.author === 'Recent Author'));
+  assert.deepEqual(await git.authors(), ['Older Author', 'Recent Author']);
+  await git.mutate(['switch', '-c', 'other']); await git.run(['config', 'user.name', 'Other Branch']);
+  await writeFile(path.join(root, 'other.txt'), 'other\n'); const other = await commit(git, 'other');
+  await git.mutate(['switch', '--detach', 'main']); await git.run(['config', 'user.name', 'Detached Author']);
+  await writeFile(path.join(root, 'detached.txt'), 'detached\n'); await commit(git, 'detached');
+  assert.deepEqual(await git.authors(), ['Detached Author', 'Older Author', 'Other Branch', 'Recent Author']);
+  await git.mutate(['switch', 'main']); await git.mutate(['branch', '-D', 'other']);
+  await git.run(['update-ref', 'refs/remotes/origin/other', other]);
+  assert.ok((await git.authors()).includes('Other Branch'), 'remote refs contribute authors');
+  await git.mutate(['tag', 'other-only', other]); await git.run(['update-ref', '-d', 'refs/remotes/origin/other']);
+  assert.ok((await git.authors()).includes('Other Branch'), 'tag-only authors are retained');
+  await git.mutate(['tag', '-d', 'other-only']);
+  assert.deepEqual(await git.authors(), ['Older Author', 'Recent Author'], 'deleted refs do not leave stale authors');
+  await git.mutate(['switch', '--orphan', 'unborn']);
+  assert.deepEqual(await git.authors(), ['Older Author', 'Recent Author'], 'unborn HEAD still lists authors from other refs');
 }));
 
 test('push, fetch and fast-forward pull work against a local bare remote', async () => repository(async (git, root) => {

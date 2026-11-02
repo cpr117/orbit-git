@@ -49,7 +49,10 @@ input, select { background: var(--vscode-input-background, #252b35); color: var(
 .filters button { padding: 3px 5px; font-size: 11px; color: var(--muted); }
 #search { flex: 1; min-width: 100px; background: transparent; }
 #filter-toggle.filter-active { color: var(--vscode-textLink-foreground, #91aaff); }
-.advanced { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; width: 100%; padding: 3px 0; }
+.advanced { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 5px; width: 100%; padding: 3px 0; }
+.author-filter { display: flex; gap: 5px; min-width: 0; }
+.author-filter select { width: 45%; min-width: 0; height: 25px; padding: 3px; font-size: 12px; }
+.author-filter input { flex: 1; min-width: 0; width: 0; }
 .advanced label { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 11px; }
 .advanced label input { width: 100%; }
 .list-heading { display: flex; justify-content: space-between; align-items: center; padding: 0 8px; color: var(--muted); font-size: 11px; border-bottom: 1px solid var(--line); height: 25px; min-height: 25px; gap: 4px; }
@@ -81,6 +84,9 @@ input, select { background: var(--vscode-input-background, #252b35); color: var(
 .detail-toolbar button { border-color: var(--line); font-size: 11px; padding: 3px 7px; }
 .commit-message { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: 12px; line-height: 1.6; color: var(--muted); }
 .changed-file { display: flex; align-items: center; gap: 2px; padding: 0 9px; }
+.changed-file.selected { background: var(--vscode-list-activeSelectionBackground, #263b59); color: var(--vscode-list-activeSelectionForeground, #fff); }
+.changed-file.selected .file-status, .changed-file.selected .restore-file { color: inherit; }
+.changed-file.selected button:hover { background: transparent; }
 .file-diff { display: flex; align-items: center; padding: 4px 0; gap: 7px; font-size: 12px; flex: 1; min-width: 0; }
 .file-status { font: 11px var(--vscode-editor-font-family, monospace); color: var(--vscode-gitDecoration-modifiedResourceForeground, #e6b86a); flex-shrink: 0; }
 .file-status.status-A { color: var(--vscode-gitDecoration-addedResourceForeground, #61c6a7); } .file-status.status-D { color: var(--vscode-gitDecoration-deletedResourceForeground, #e58c9c); } .file-status.status-R { color: var(--vscode-gitDecoration-renamedResourceForeground, #9baee2); } .file-status.status-U { color: var(--vscode-gitDecoration-conflictingResourceForeground, #e58c9c); }

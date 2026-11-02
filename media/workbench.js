@@ -8,7 +8,7 @@
   const saved = vscode.getState() || {};
   let modules = { graph: true, stash: true, selectionHistory: true, fileHistory: true, blame: true, editorMenu: true, statusBar: true, comparison: true, explorerMenu: true, operations: true, ...window.gitWorkbenchModules };
   const availableTabs = () => ['history', 'stash'].filter(tab => modules[tab === 'history' ? 'graph' : 'stash']);
-  const state = { snapshot: null, detail: null, selected: saved.selected, compared: saved.hashes || [], anchor: saved.selected, tab: ['history', 'stash'].includes(saved.tab) ? saved.tab : 'history', loading: false, operating: false, collapsed: new Set(saved.collapsed || []), panes: saved.panes || {}, stashSelected: saved.stashSelected, stashRoot: saved.stashRoot, stashDetail: null, stashFile: null, stashPendingDiff: null, stashCollapsed: new Set() };
+  const state = { snapshot: null, detail: null, selectedFile: null, selected: saved.selected, compared: saved.hashes || [], anchor: saved.selected, tab: ['history', 'stash'].includes(saved.tab) ? saved.tab : 'history', loading: false, operating: false, collapsed: new Set(saved.collapsed || []), panes: saved.panes || {}, stashSelected: saved.stashSelected, stashRoot: saved.stashRoot, stashDetail: null, stashFile: null, stashPendingDiff: null, stashCollapsed: new Set() };
   const palette = ['#7c9cff', '#61c6a7', '#d49bed', '#e6b86a', '#77c4dd', '#e58c9c', '#a9c77a'];
   const svgNS = 'http://www.w3.org/2000/svg';
   const $ = id => document.getElementById(id);
@@ -39,7 +39,7 @@
         <form id="filters" class="filters">
           <input id="search" placeholder="${t("搜索提交信息")}" aria-label="${t("搜索提交信息")}">
           <button type="button" id="filter-toggle" title="${t("按作者、日期、路径筛选")}">${t("作者 · 日期 · 路径 ▾")}</button><button type="submit" title="${t("应用筛选")}">${t("搜索")}</button>
-          <div id="advanced" class="advanced" hidden><input id="author" placeholder="${t("作者（Git 正则）")}" aria-label="${t("作者")}"><input id="path" placeholder="${t("路径，如 src/main.go")}" aria-label="${t("文件或目录路径")}"><label>${t("起始")} <input id="since" type="date"></label><label>${t("截止")} <input id="until" type="date"></label></div>
+          <div id="advanced" class="advanced" hidden><div class="author-filter"><select id="author-select" aria-label="${t("选择提交人")}" title="${t("选择提交人")}"></select><input id="author" placeholder="${t("作者（Git 正则）")}" aria-label="${t("作者")}"></div><input id="path" placeholder="${t("路径，如 src/main.go")}" aria-label="${t("文件或目录路径")}"><label>${t("起始")} <input id="since" type="date"></label><label>${t("截止")} <input id="until" type="date"></label></div>
         </form>
         <div class="list-heading"><span id="history-count">${t("等待加载")}</span><button id="compare" hidden>${t("仅比两个快照")}</button><button id="clear-filters">${t("清除筛选")}</button></div>
         <div id="commits" class="commits" role="listbox" aria-multiselectable="true" aria-label="${t("提交列表")}"></div>
@@ -107,6 +107,21 @@
   $('branch-search').oninput = renderRefs;
   $('filter-toggle').onclick = () => { $('advanced').hidden = !$('advanced').hidden; };
   const filters = () => ({ ...(state.snapshot?.filters || {}), search: $('search').value, author: $('author').value, path: $('path').value, since: $('since').value, until: $('until').value, limit: 200 });
+  const authorPattern = name => '^' + name.replace(/[\\.^$[*]/g, '\\$&') + ' <';
+  function renderAuthors() {
+    const select = $('author-select'), current = $('author').value;
+    select.replaceChildren();
+    const all = make('option', '', t("全部作者")); all.value = ''; select.append(all);
+    for (const name of state.snapshot?.authors || []) {
+      const option = make('option', '', name); option.value = authorPattern(name); select.append(option);
+    }
+    if (current && ![...select.children].some(option => option.value === current)) {
+      const custom = make('option', '', t("自定义作者筛选")); custom.value = current; select.append(custom);
+    }
+    select.value = current;
+  }
+  $('author-select').onchange = () => { $('author').value = $('author-select').value; send('filters', { filters: filters() }); };
+  $('author').oninput = renderAuthors;
   $('filters').onsubmit = event => { event.preventDefault(); send('filters', { filters: filters() }); };
   $('clear-filters').onclick = () => send('filters', { filters: { limit: 200 } });
   $('more').onclick = () => send('filters', { filters: { ...state.snapshot.filters, limit: Math.min(5000, (state.snapshot.filters.limit || 200) + 200) } });
@@ -211,10 +226,12 @@
     container.scrollTop = scroll;
   }
   function clearDetail() {
+    state.selectedFile = null;
     $('changed-files').replaceChildren(make('div', 'empty-list', t("选择提交以查看变更文件")));
     $('commit-detail').replaceChildren(make('div', 'empty-list', t("提交详情")));
   }
   function renderDetail(data) {
+    if (JSON.stringify([state.detail?.base, state.detail?.target, state.detail?.aggregate]) !== JSON.stringify([data.base, data.target, data.aggregate])) state.selectedFile = null;
     state.detail = data;
     if (!data.compare && data.target) { state.selected = data.target; state.anchor = data.target; state.compared = [data.target]; persist(); renderCommits(); }
     const panel = $('commit-detail'); panel.replaceChildren();
@@ -236,9 +253,22 @@
     if (data.aggregate) body.append(make('p', 'meta', t("基准 {0} → {1} · 包含最旧所选提交和区间内的中间修改；互相抵消的修改不计入净改动。", shorten(data.base), shorten(data.target))));
     files.append(make('div', 'section-title', t("{0} 个变更文件 · 点击打开 Diff", data.files.length)));
     if (!data.files.length) files.append(make('p', 'meta', t("此版本比较没有文件变化。")));
+    const fileKey = file => JSON.stringify([file.commitHash, file.path]);
+    if (!data.files.some(file => fileKey(file) === state.selectedFile)) state.selectedFile = null;
     data.files.forEach(file => {
       const entry = make('div', 'changed-file');
-      const diff = button('', () => send('diff', { path: file.path, commitHash: file.commitHash }), 'file-diff');
+      entry.dataset.file = fileKey(file);
+      entry.classList.toggle('selected', state.selectedFile === entry.dataset.file);
+      const diff = button('', () => {
+        state.selectedFile = entry.dataset.file;
+        for (const row of files.children) {
+          const selected = row.dataset.file === state.selectedFile;
+          row.classList.toggle('selected', selected);
+          if (row.dataset.file) row.children[0].setAttribute('aria-pressed', String(selected));
+        }
+        send('diff', { path: file.path, commitHash: file.commitHash });
+      }, 'file-diff');
+      diff.setAttribute('aria-pressed', String(state.selectedFile === entry.dataset.file));
       diff.append(make('span', `file-status status-${file.status[0]}`, file.status[0]), make('span', 'file-path', file.commitHash ? `${shorten(file.commitHash)} · ${file.path}` : file.path));
       diff.title = file.oldPath ? `${file.oldPath} → ${file.path}` : file.path;
       entry.append(diff);
@@ -412,6 +442,7 @@
       $('context-menu').hidden = true;
       state.snapshot = null; state.detail = null; state.selected = undefined; state.compared = []; state.stashSelected = undefined; state.stashDetail = null; state.stashPendingDiff = null; state.stashCollapsed.clear(); renderStashes(); renderStashFiles(); persist();
       $('commits').replaceChildren(); $('refs').replaceChildren(); clearDetail();
+      $('author').value = ''; renderAuthors();
     } else if (type === 'snapshot') {
       $('context-menu').hidden = true;
       state.snapshot = data;
@@ -421,6 +452,7 @@
       $('root-path').textContent = data.root; $('branch-state').textContent = `${data.state.branch}${data.state.operation ? ' · ' + data.state.operation + t(" 进行中") : ''}`;
       $('continue').hidden = $('abort').hidden = !modules.operations || !data.state.operation;
       for (const key of ['search', 'author', 'path', 'since', 'until']) $(key).value = data.filters[key] || '';
+      renderAuthors();
       state.compared = state.compared.filter(hash => data.commits.some(commit => commit.hash === hash));
       if (state.selected && !data.commits.some(commit => commit.hash === state.selected)) state.selected = undefined;
       if (!state.compared.length && state.selected) state.compared = [state.selected];
@@ -442,6 +474,7 @@
     else if (type === 'operating') { state.operating = data; busy(); renderStashFiles(); $('stash-create').disabled = Boolean(data); }
     else if (type === 'error') { $('notice-text').textContent = data; $('notice').hidden = false; state.loading = false; busy(); }
   });
+  renderAuthors();
   function applyPanes() {
     const left = Math.max(12, Math.min(38, Number(state.panes.left) || 28));
     const right = Math.max(18, Math.min(38, Number(state.panes.right) || 23));

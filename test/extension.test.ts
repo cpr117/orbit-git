@@ -495,6 +495,24 @@ test('Git log is contributed beside Terminal and reopening reuses the panel view
   assert.deepEqual(errors, []);
 }));
 
+test('log snapshots retain the complete author picker across combined filters and refresh external commits', async () => fixture(async (git, root) => {
+  await git.run(['config', 'user.name', 'Bot.[build]']);
+  await writeFile(path.join(root, 'code.txt'), 'author change\n');
+  await git.mutate(['add', '-A']); await git.mutate(['commit', '-m', 'fix [case]']);
+  await commands.get('gitWorkbench.open')!(); const view = logViews[0];
+  const snapshot = () => view.messages.filter(message => message.type === 'snapshot').at(-1)!.data!;
+  assert.deepEqual(snapshot().authors, ['Bot.[build]', 'History Test']);
+  await view.listener!({ type: 'filters', repoRoot: snapshot().root, filters: { author: '^Bot\\.\\[build] <', search: '[case]', path: 'code.txt' } });
+  assert.deepEqual((snapshot().commits as { author: string }[]).map(item => item.author), ['Bot.[build]']);
+  assert.deepEqual(snapshot().authors, ['Bot.[build]', 'History Test'], 'the author picker is independent of commit filters');
+  await git.run(['config', 'user.name', 'New Author']);
+  await git.mutate(['commit', '--allow-empty', '-m', 'external commit']);
+  await view.listener!({ type: 'refresh', repoRoot: snapshot().root });
+  assert.deepEqual(snapshot().authors, ['Bot.[build]', 'History Test', 'New Author']);
+  assert.equal((snapshot().commits as unknown[]).length, 1, 'refresh does not discard the current filters');
+  assert.deepEqual(errors, []);
+}));
+
 test('history jump reveals and selects the commit in the bottom Git panel', async () => fixture(async () => {
   await commands.get('gitWorkbench.fileHistory')!(); const history = panels[0];
   await history.listener!({ type: 'init' });

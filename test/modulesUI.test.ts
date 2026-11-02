@@ -9,11 +9,23 @@ class Element {
   children: Element[] = [];
   dataset: Record<string, string> = {};
   style = { setProperty() {} };
-  classList = { toggle() {}, add() {}, remove() {} };
+  classList = {
+    contains: (name: string) => this.className.split(' ').includes(name),
+    toggle: (name: string, force?: boolean) => {
+      const next = force ?? !this.classList.contains(name);
+      this.className = this.className.split(' ').filter(value => value && value !== name).concat(next ? [name] : []).join(' ');
+      return next;
+    },
+    add: (name: string) => { this.classList.toggle(name, true); },
+    remove: (name: string) => { this.classList.toggle(name, false); },
+  };
   attrs = new Map<string, string>();
   value = ''; textContent = ''; className = ''; innerHTML = ''; disabled = false; hidden = false;
   scrollTop = 0; tabIndex = 0;
   onclick?: () => void;
+  oninput?: () => void;
+  onchange?: () => void;
+  onsubmit?: (event: Input) => void;
   onkeydown?: (event: Input) => void;
   oncontextmenu?: (event: Input) => void;
   title = "";
@@ -38,7 +50,7 @@ function fixture(enabled: Record<string, boolean> = {}, savedTab = 'history') {
     querySelector(selector: string) { return document.getElementById(selector); },
     addEventListener() {},
   };
-  const messages: { type: string }[] = [];
+  const messages: { type: string; path?: string; filters?: Record<string, unknown> }[] = [];
   let listener: (event: unknown) => void;
   const window = { gitWorkbenchLanguage: 'en', gitWorkbenchModules: enabled, addEventListener(_type: string, callback: typeof listener) { listener = callback; } };
   const api = { getState: () => ({ tab: savedTab }), setState() {}, postMessage: (message: { type: string }) => messages.push(message) };
@@ -99,4 +111,50 @@ test('branch menus retain read-only comparisons and do not show empty menus or l
   receive('modules', { comparison: false });
   row.oncontextmenu!({ preventDefault() {} });
   assert.equal(menu.children.length, 0); assert.equal(menu.hidden, true);
+});
+
+test('clicked log file stays selected through a redraw and switches or clears with the detail context', () => {
+  const { element, receive, messages } = fixture();
+  const detail = { compare: true, base: 'a'.repeat(40), target: 'b'.repeat(40), message: 'Comparison', files: [{ path: 'src/a.txt', status: 'M' }, { path: 'src/b.txt', status: 'A' }] };
+  receive('detail', detail);
+  const rows = () => element('changed-files').children.slice(1);
+  rows()[0].children[0].onclick!();
+  assert.equal(messages.at(-1)!.type, 'diff'); assert.equal(messages.at(-1)!.path, 'src/a.txt');
+  element('commits').focus();
+  assert.equal(rows()[0].classList.contains('selected'), true, 'selection remains after focus leaves the file');
+  assert.equal(rows()[0].children[0].getAttribute('aria-pressed'), 'true');
+  rows()[1].children[0].onclick!();
+  assert.deepEqual(rows().map(row => row.classList.contains('selected')), [false, true]);
+  receive('detail', detail);
+  assert.deepEqual(rows().map(row => row.classList.contains('selected')), [false, true], 'refresh retains selection');
+  receive('modules', { operations: false });
+  assert.equal(rows()[1].classList.contains('selected'), true, 'module changes redraw without losing selection');
+  receive('detail', { ...detail, base: 'c'.repeat(40) });
+  assert.ok(rows().every(row => !row.classList.contains('selected')), 'a different parent or comparison clears selection');
+  receive('detail', detail);
+  rows()[0].children[0].onclick!();
+  receive('detail', { ...detail, files: [detail.files[1]] });
+  assert.equal(rows()[0].classList.contains('selected'), false, 'removed files cannot remain selected');
+  rows()[0].children[0].onclick!(); receive('reset', null); receive('detail', detail);
+  assert.ok(rows().every(row => !row.classList.contains('selected')), 'repository reset clears selection');
+});
+
+test('author dropdown uses all repository authors, preserves other filters and supports manual expressions', () => {
+  const { element, receive, messages } = fixture();
+  const snapshot = { root: '/fixture', refs: [], commits: [], graph: [], filters: { search: 'fix [case]', path: 'src', since: '2026-01-01' }, authors: ['A.[bot]*', 'Other'], state: { branch: 'main' }, stashes: [] };
+  receive('snapshot', snapshot);
+  assert.deepEqual(element('author-select').children.map(option => option.textContent), ['All authors', 'A.[bot]*', 'Other']);
+  const pattern = element('author-select').children[1].value;
+  element('author-select').value = pattern; element('author-select').onchange!();
+  assert.deepEqual(JSON.parse(JSON.stringify(messages.at(-1)!.filters)), { ...snapshot.filters, author: '^A\\.\\[bot]\\* <', until: '', limit: 200 });
+  receive('snapshot', { ...snapshot, filters: messages.at(-1)!.filters });
+  assert.equal(element('author-select').value, pattern);
+  assert.equal(element('author-select').children.length, 3, 'filtering does not shrink the author list');
+  element('author').value = 'A.*'; element('author').oninput!();
+  assert.equal(element('author-select').children.at(-1)!.textContent, 'Custom author filter');
+  assert.equal(element('author-select').value, 'A.*');
+  element('author-select').value = ''; element('author-select').onchange!();
+  assert.equal(messages.at(-1)!.filters!.author, ''); assert.equal(messages.at(-1)!.filters!.search, 'fix [case]');
+  receive('reset', null);
+  assert.deepEqual(element('author-select').children.map(option => option.textContent), ['All authors']);
 });

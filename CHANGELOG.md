@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Keep the clicked changed file highlighted when opening Diff; preserve it when refreshing the same comparison.
+- Add a repository-wide author dropdown and keep author expressions working alongside literal commit-message searches.
+- Prefer Marketplace installation by extension ID in the README and guide; retain VSIX instructions for other editors and offline use.
+
 ## 0.15.0 — Orbit Git
 
 - Publish verified build artifacts by ID so full workflow reruns and failed-publish reruns use the correct package.
