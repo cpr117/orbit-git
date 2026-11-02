@@ -985,7 +985,8 @@
   "icon": "media/icon.png",
   "overrides": {
     "@vscode/vsce": {
-      "@azure/identity": "4.13.0"
+      "@azure/identity": "4.13.0",
+      "minimatch": "11.0.1"
     },
     "uuid": "11.1.1"
   }

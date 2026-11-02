@@ -5,6 +5,7 @@
 - Keep the clicked changed file highlighted when opening Diff; preserve it when refreshing the same comparison.
 - Add a repository-wide author dropdown and keep author expressions working alongside literal commit-message searches.
 - Prefer Marketplace installation by extension ID in the README and guide; retain VSIX instructions for other editors and offline use.
+- Pin the build-time glob matcher to minimatch 11.0.1 to resolve [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249); verify VSIX file exclusions before publishing.
 
 ## 0.15.0 — Orbit Git
 

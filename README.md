@@ -103,7 +103,7 @@ macOS 12+ 本地工作区默认使用原生小窗；Windows、Linux 和远程工
 
 需要 Node.js 22+ 与 Git。构建 macOS 原生小窗还需要 Xcode Command Line Tools。
 
-构建工具的认证依赖通过 `overrides` 临时固定为已检查的版本，发布使用独立的 OIDC 路径。该覆盖低于新版打包工具声明的 Azure Identity 范围；更新依赖或使用 Azure 凭据登录前，应重新检查兼容性与 `npm audit`。这些开发依赖不包含在 VSIX 中。
+构建工具的认证与文件匹配依赖通过 `overrides` 临时固定，发布使用独立的 OIDC 路径。Azure Identity 4.13.0 和 minimatch 11.0.1 超出打包工具声明的依赖范围；更新工具或使用 Azure 凭据登录前，应重新检查兼容性与 `npm audit`。这些开发依赖不包含在 VSIX 中。
 
 ```sh
 git clone https://github.com/cpr117/orbit-git.git
